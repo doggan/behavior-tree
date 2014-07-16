@@ -35,7 +35,18 @@ function MockSequence(childCount) {
 
 inherits(MockSequence, bt.Sequence);
 
+function MockSelector(childCount) {
+    bt.Selector.call(this);
+
+    for (var i = 0; i < childCount; i++) {
+        this.children.push(new MockAction());
+    }
+}
+
+inherits(MockSelector, bt.Selector);
+
 module.exports = {
     MockAction: MockAction,
-    MockSequence: MockSequence
+    MockSequence: MockSequence,
+    MockSelector: MockSelector
 };

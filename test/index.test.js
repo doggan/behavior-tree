@@ -1,6 +1,7 @@
 var expect = require('chai').expect,
     MockAction = require('./mock_objects').MockAction,
     MockSequence = require('./mock_objects').MockSequence,
+    MockSelector = require('./mock_objects').MockSelector,
     bt = require('./../index');
 
 describe('bt.Action', function() {
@@ -95,6 +96,54 @@ describe('bt.Sequence', function() {
             seq.children[0].returnStatus = statuses[i];
             expect(seq.tick()).to.equal(statuses[i]);
             expect(seq.children[0].endCount).to.equal(1);
+        }
+
+        done();
+    });
+});
+
+describe('bt.Selector', function() {
+    it('has two children and should continue to the next child when the first child fails', function(done) {
+        var sel = new MockSelector(2);
+
+        expect(sel.tick()).to.equal(bt.Status.RUNNING);
+        expect(sel.children[0].endCount).to.equal(0);
+        expect(sel.children[1].startCount).to.equal(0);
+
+        sel.children[0].returnStatus = bt.Status.FAILURE;
+        expect(sel.tick()).to.equal(bt.Status.RUNNING);
+        expect(sel.children[0].endCount).to.equal(1);
+        expect(sel.children[1].startCount).to.equal(1);
+
+        done();
+    });
+
+    it('has two children and should stop when the first child succeeds', function(done) {
+        var sel = new MockSelector(2);
+
+        expect(sel.tick()).to.equal(bt.Status.RUNNING);
+        expect(sel.children[0].endCount).to.equal(0);
+        expect(sel.children[1].startCount).to.equal(0);
+
+        sel.children[0].returnStatus = bt.Status.SUCCESS;
+        expect(sel.tick()).to.equal(bt.Status.SUCCESS);
+        expect(sel.children[0].endCount).to.equal(1);
+        expect(sel.children[1].startCount).to.equal(0);
+
+        done();
+    });
+
+    it('has one child and should pass on the child status upon completion', function(done) {
+        var statuses = [bt.Status.SUCCESS, bt.Status.FAILURE];
+        for (var i = 0; i < 2; i++) {
+            var sel = new MockSelector(1);
+
+            expect(sel.tick()).to.equal(bt.Status.RUNNING);
+            expect(sel.children[0].endCount).to.equal(0);
+
+            sel.children[0].returnStatus = statuses[i];
+            expect(sel.tick()).to.equal(statuses[i]);
+            expect(sel.children[0].endCount).to.equal(1);
         }
 
         done();

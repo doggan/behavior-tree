@@ -96,8 +96,43 @@ function Sequence() {
 
 inherits(Sequence, Composite);
 
+function Selector() {
+    var self = this;
+    if (!(self instanceof Selector)) {
+        self = new Selector();
+    } else {
+        Composite.call(self);
+        self.currentChildIndex = -1;
+        self.start = function() {
+            assert(self.children.length > 0, 'Selector has no children.');
+            self.currentChildIndex = 0;
+        };
+        self.update = function() {
+            while (true) {
+                var status = self.children[self.currentChildIndex].tick();
+
+                // Progress to next child on failure.
+                if (status === Status.FAILURE) {
+                    self.currentChildIndex++;
+
+                    // All done?
+                    if (self.currentChildIndex === self.children.length) {
+                        return Status.FAILURE;
+                    }
+                } else {
+                    return status;
+                }
+            }
+        };
+    }
+    return self;
+}
+
+inherits(Selector, Composite);
+
 module.exports = {
     Status: Status,
     Action: Action,
-    Sequence: Sequence
+    Sequence: Sequence,
+    Selector: Selector
 };
