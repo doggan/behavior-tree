@@ -26,28 +26,6 @@ function MockAction() {
 
 inherits(MockAction, bt.Action);
 
-function MockSequence(childCount) {
-    bt.Sequence.call(this);
-
-    for (var i = 0; i < childCount; i++) {
-        this.children.push(new MockAction());
-    }
-}
-
-inherits(MockSequence, bt.Sequence);
-
-function MockSelector(childCount) {
-    bt.Selector.call(this);
-
-    for (var i = 0; i < childCount; i++) {
-        this.children.push(new MockAction());
-    }
-}
-
-inherits(MockSelector, bt.Selector);
-
 module.exports = {
-    MockAction: MockAction,
-    MockSequence: MockSequence,
-    MockSelector: MockSelector
+    MockAction: MockAction
 };
