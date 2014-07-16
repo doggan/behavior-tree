@@ -2,25 +2,26 @@ var inherits = require('inherits'),
     bt = require('./../index');
 
 function MockAction() {
-    bt.Action.call(this);
+    var self = this;
+    var params = {
+        start: function() {
+            self.startCount++;
+        },
+        update: function() {
+            self.updateCount++;
+            return self.returnStatus;
+        },
+        end: function() {
+            self.endCount++;
+        }
+    };
+
+    bt.Action.call(this, params);
 
     this.startCount = 0;
     this.updateCount = 0;
     this.endCount = 0;
     this.returnStatus = bt.Status.RUNNING;
-
-    this.start = function() {
-        this.startCount++;
-    };
-
-    this.update = function() {
-        this.updateCount++;
-        return this.returnStatus;
-    };
-
-    this.end = function() {
-        this.endCount++;
-    };
 }
 
 inherits(MockAction, bt.Action);

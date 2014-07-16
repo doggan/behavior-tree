@@ -1,6 +1,7 @@
 'use strict';
 
-var Status = require('./lib/status');
+var Status = require('./lib/status'),
+    assert = require('assert');
 
 function Node(params) {
     this.status = Status.INVALID;
@@ -9,6 +10,8 @@ function Node(params) {
     this.start = params.start || null;
     this.update = params.update;
     this.end = params.end || null;
+
+    assert(this.update, 'Update callback required.');
 }
 
 Node.prototype.tick = function () {
@@ -19,9 +22,7 @@ Node.prototype.tick = function () {
     }
 
     this.status = this.update();
-    if (isNaN(this.status)) {
-        throw new Error('Update must return a Status. Currently returning: ' + this.status);
-    }
+    assert(!isNaN(this.status), 'Update must return a Status. Currently returning: ' + this.status);
 
     if (this.status !== Status.RUNNING) {
         if (this.end) {
@@ -60,36 +61,38 @@ Composite.prototype.addChild = function (node) {
     return this;
 };
 
-var assert = require('assert');
-
 function Sequence() {
     var self = this;
     if (!(self instanceof Sequence)) {
         self = new Sequence();
     } else {
-        Composite.call(self);
-        self.currentChildIndex = -1;
-        self.start = function() {
-            assert(self.children.length > 0, 'Sequence has no children.');
-            self.currentChildIndex = 0;
-        };
-        self.update = function() {
-            while (true) {
-                var status = self.children[self.currentChildIndex].tick();
+        var params = {
+            start: function() {
+                assert(self.children.length > 0, 'Sequence has no children.');
+                self.currentChildIndex = 0;
+            },
+            update: function() {
+                while (true) {
+                    var status = self.children[self.currentChildIndex].tick();
 
-                // Progress to next child on success.
-                if (status === Status.SUCCESS) {
-                    self.currentChildIndex++;
+                    // Progress to next child on success.
+                    if (status === Status.SUCCESS) {
+                        self.currentChildIndex++;
 
-                    // All done?
-                    if (self.currentChildIndex === self.children.length) {
-                        return Status.SUCCESS;
+                        // All done?
+                        if (self.currentChildIndex === self.children.length) {
+                            return Status.SUCCESS;
+                        }
+                    } else {
+                        return status;
                     }
-                } else {
-                    return status;
                 }
             }
         };
+
+        Composite.call(self, params);
+        self.currentChildIndex = -1;
+
     }
     return self;
 }
@@ -101,29 +104,32 @@ function Selector() {
     if (!(self instanceof Selector)) {
         self = new Selector();
     } else {
-        Composite.call(self);
-        self.currentChildIndex = -1;
-        self.start = function() {
-            assert(self.children.length > 0, 'Selector has no children.');
-            self.currentChildIndex = 0;
-        };
-        self.update = function() {
-            while (true) {
-                var status = self.children[self.currentChildIndex].tick();
+        var params = {
+            start: function() {
+                assert(self.children.length > 0, 'Selector has no children.');
+                self.currentChildIndex = 0;
+            },
+            update: function() {
+                while (true) {
+                    var status = self.children[self.currentChildIndex].tick();
 
-                // Progress to next child on failure.
-                if (status === Status.FAILURE) {
-                    self.currentChildIndex++;
+                    // Progress to next child on failure.
+                    if (status === Status.FAILURE) {
+                        self.currentChildIndex++;
 
-                    // All done?
-                    if (self.currentChildIndex === self.children.length) {
-                        return Status.FAILURE;
+                        // All done?
+                        if (self.currentChildIndex === self.children.length) {
+                            return Status.FAILURE;
+                        }
+                    } else {
+                        return status;
                     }
-                } else {
-                    return status;
                 }
             }
         };
+
+        Composite.call(self, params);
+        self.currentChildIndex = -1;
     }
     return self;
 }
