@@ -165,3 +165,85 @@ describe('bt.Selector', function() {
         done();
     });
 });
+
+describe('bt.Parallel', function() {
+    it('should succeed when all children succeed while using REQUIRE_ALL as the success policy', function(done) {
+        var root =
+            bt.Parallel(bt.ParallelPolicy.REQUIRE_ALL, bt.ParallelPolicy.REQUIRE_ONE)
+                .addChild(new MockAction())
+                .addChild(new MockAction());
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[0].returnStatus = bt.Status.SUCCESS;
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[1].returnStatus = bt.Status.SUCCESS;
+        expect(root.tick()).to.equal(bt.Status.SUCCESS);
+
+        done();
+    });
+
+    it('should succeed when one child succeeds while using REQUIRE_ONE as the success policy', function(done) {
+        var root =
+            bt.Parallel(bt.ParallelPolicy.REQUIRE_ONE, bt.ParallelPolicy.REQUIRE_ALL)
+                .addChild(new MockAction())
+                .addChild(new MockAction());
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[0].returnStatus = bt.Status.SUCCESS;
+        expect(root.tick()).to.equal(bt.Status.SUCCESS);
+
+        done();
+    });
+
+    it('should fail when all children fail while using REQUIRE_ALL as the failure policy', function(done) {
+        var root =
+            bt.Parallel(bt.ParallelPolicy.REQUIRE_ONE, bt.ParallelPolicy.REQUIRE_ALL)
+                .addChild(new MockAction())
+                .addChild(new MockAction());
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[0].returnStatus = bt.Status.FAILURE;
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[1].returnStatus = bt.Status.FAILURE;
+        expect(root.tick()).to.equal(bt.Status.FAILURE);
+
+        done();
+    });
+
+    it('should fail when one child fails while using REQUIRE_ONE as the failure policy', function(done) {
+        var root =
+            bt.Parallel(bt.ParallelPolicy.REQUIRE_ALL, bt.ParallelPolicy.REQUIRE_ONE)
+                .addChild(new MockAction())
+                .addChild(new MockAction());
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        root.children[0].returnStatus = bt.Status.FAILURE;
+        expect(root.tick()).to.equal(bt.Status.FAILURE);
+
+        done();
+    });
+
+    it('should abort all running children when parallel node ends', function(done) {
+        var root =
+            bt.Parallel()
+                .addChild(new MockAction())
+                .addChild(new MockAction());
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+
+        expect(root.children[0].status).to.equal(bt.Status.RUNNING);
+        expect(root.children[0].endCount).to.equal(0);
+        expect(root.children[1].status).to.equal(bt.Status.RUNNING);
+        expect(root.children[1].endCount).to.equal(0);
+
+        root.children[0].returnStatus = bt.Status.SUCCESS;
+        expect(root.tick()).to.equal(bt.Status.SUCCESS);
+
+        expect(root.children[0].status).to.equal(bt.Status.SUCCESS);
+        expect(root.children[0].endCount).to.equal(1);
+        expect(root.children[1].status).to.equal(bt.Status.ABORTED);
+        expect(root.children[1].endCount).to.equal(1);
+
+        done();
+    });
+});
