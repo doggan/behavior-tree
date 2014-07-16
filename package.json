@@ -4,7 +4,7 @@
   "description": "A simple behavior tree library.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --reporter spec"
   },
   "repository": {
     "type": "git",
@@ -20,5 +20,17 @@
   "bugs": {
     "url": "https://github.com/doggan/behavior-tree/issues"
   },
-  "homepage": "https://github.com/doggan/behavior-tree"
+  "homepage": "https://github.com/doggan/behavior-tree",
+  "jshintConfig": {
+    "node": true,
+    "browser": true,
+    "unused": true
+  },
+  "dependencies": {
+    "inherits": "^2.0.1"
+  },
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "mocha": "^1.20.1"
+  }
 }
