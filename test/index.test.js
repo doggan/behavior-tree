@@ -1,7 +1,5 @@
 var expect = require('chai').expect,
     MockAction = require('./mock_objects').MockAction,
-    MockSequence = require('./mock_objects').MockSequence,
-    MockSelector = require('./mock_objects').MockSelector,
     bt = require('./../index');
 
 describe('bt.Action', function() {
