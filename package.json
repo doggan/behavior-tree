@@ -1,0 +1,24 @@
+{
+  "name": "behavior-tree",
+  "version": "0.0.0",
+  "description": "A simple behavior tree library.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doggan/behavior-tree.git"
+  },
+  "keywords": [
+    "behavior",
+    "tree",
+    "ai"
+  ],
+  "author": "Shyam Guthikonda",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/doggan/behavior-tree/issues"
+  },
+  "homepage": "https://github.com/doggan/behavior-tree"
+}
