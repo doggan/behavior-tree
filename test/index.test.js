@@ -108,10 +108,10 @@ describe('bt.Sequence', function() {
     });
 });
 
-describe('bt.Selector', function() {
-    it('has two children and should continue to the next child when the first child fails', function(done) {
+describe('Selectors', function() {
+    function doTest1(newSelector) {
         var root =
-            bt.Selector()
+            newSelector()
                 .addChild(new MockAction())
                 .addChild(new MockAction());
 
@@ -123,13 +123,11 @@ describe('bt.Selector', function() {
         expect(root.tick()).to.equal(bt.Status.RUNNING);
         expect(root.children[0].endCount).to.equal(1);
         expect(root.children[1].startCount).to.equal(1);
+    }
 
-        done();
-    });
-
-    it('has two children and should stop when the first child succeeds', function(done) {
+    function doTest2(newSelector) {
         var root =
-            bt.Selector()
+            newSelector()
                 .addChild(new MockAction())
                 .addChild(new MockAction());
 
@@ -141,15 +139,13 @@ describe('bt.Selector', function() {
         expect(root.tick()).to.equal(bt.Status.SUCCESS);
         expect(root.children[0].endCount).to.equal(1);
         expect(root.children[1].startCount).to.equal(0);
+    }
 
-        done();
-    });
-
-    it('has one child and should pass on the child status upon completion', function(done) {
+    function doTest3(newSelector) {
         var statuses = [bt.Status.SUCCESS, bt.Status.FAILURE];
         for (var i = 0; i < 2; i++) {
             var root =
-                bt.Selector()
+                newSelector()
                     .addChild(new MockAction());
 
             expect(root.tick()).to.equal(bt.Status.RUNNING);
@@ -159,8 +155,106 @@ describe('bt.Selector', function() {
             expect(root.tick()).to.equal(statuses[i]);
             expect(root.children[0].endCount).to.equal(1);
         }
+    }
 
-        done();
+    describe('bt.Selector', function() {
+        it('has two children and should continue to the next child when the first child fails', function(done) {
+            doTest1(function() { return bt.Selector(); });
+            done();
+        });
+
+        it('has two children and should stop when the first child succeeds', function(done) {
+            doTest2(function() { return bt.Selector(); });
+            done();
+        });
+
+        it('has one child and should pass on the child status upon completion', function(done) {
+            doTest3(function() { return bt.Selector(); });
+            done();
+        });
+
+        it('has two children and should not re-evaluate the first child if the second child is running', function(done) {
+            var root =
+                bt.Selector()
+                    .addChild(new MockAction())
+                    .addChild(new MockAction());
+
+            expect(root.children[0].updateCount).to.equal(0);
+            expect(root.children[1].updateCount).to.equal(0);
+            root.children[0].returnStatus = bt.Status.FAILURE;
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].updateCount).to.equal(1);
+            expect(root.children[1].updateCount).to.equal(1);
+
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].updateCount).to.equal(1);
+            expect(root.children[1].updateCount).to.equal(2);
+
+            done();
+        });
+    });
+
+    describe('bt.PrioritySelector', function() {
+        it('has two children and should continue to the next child when the first child fails', function(done) {
+            doTest1(function() { return bt.PrioritySelector(); });
+            done();
+        });
+
+        it('has two children and should stop when the first child succeeds', function(done) {
+            doTest2(function() { return bt.PrioritySelector(); });
+            done();
+        });
+
+        it('has one child and should pass on the child status upon completion', function(done) {
+            doTest3(function() { return bt.PrioritySelector(); });
+            done();
+        });
+
+        it('has two children and should re-evaluate the first child even if the second child is running', function(done) {
+            var root =
+                bt.PrioritySelector()
+                    .addChild(new MockAction())
+                    .addChild(new MockAction());
+
+            expect(root.children[0].updateCount).to.equal(0);
+            expect(root.children[1].updateCount).to.equal(0);
+            root.children[0].returnStatus = bt.Status.FAILURE;
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].updateCount).to.equal(1);
+            expect(root.children[1].updateCount).to.equal(1);
+
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].updateCount).to.equal(2);
+            expect(root.children[1].updateCount).to.equal(2);
+
+            done();
+        });
+
+        it('has two children and should reset the second child (low priority) if the first child (high priority) starts running', function(done) {
+            var root =
+                bt.PrioritySelector()
+                    .addChild(new MockAction())
+                    .addChild(new MockAction());
+
+            root.children[0].returnStatus = bt.Status.FAILURE;
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].status).to.equal(bt.Status.FAILURE);
+            expect(root.children[1].status).to.equal(bt.Status.RUNNING);
+
+            // Begin the high priority child.
+            root.children[0].returnStatus = bt.Status.RUNNING;
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].status).to.equal(bt.Status.RUNNING);
+            expect(root.children[1].status).to.equal(bt.Status.ABORTED);
+
+            // Re-start the low priority child.
+            root.children[0].returnStatus = bt.Status.FAILURE;
+            expect(root.tick()).to.equal(bt.Status.RUNNING);
+            expect(root.children[0].status).to.equal(bt.Status.FAILURE);
+            expect(root.children[1].status).to.equal(bt.Status.RUNNING);
+
+            done();
+        });
     });
 });
 

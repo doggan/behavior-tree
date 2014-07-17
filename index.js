@@ -5,6 +5,7 @@ module.exports = {
     Action: require('./lib/action'),
     Sequence: require('./lib/sequence'),
     Selector: require('./lib/selector'),
+    PrioritySelector: require('./lib/priority_selector'),
     Parallel: require('./lib/parallel').Parallel,
     ParallelPolicy: require('./lib/parallel').ParallelPolicy,
     Decorator: require('./lib/decorator'),
