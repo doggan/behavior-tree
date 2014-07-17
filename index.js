@@ -7,5 +7,7 @@ module.exports = {
     Selector: require('./lib/selector'),
     Parallel: require('./lib/parallel').Parallel,
     ParallelPolicy: require('./lib/parallel').ParallelPolicy,
-    Condition: require('./lib/condition')
+    Decorator: require('./lib/decorator'),
+    Condition: require('./lib/condition'),
+    log: require('./lib/core/logger')
 };
