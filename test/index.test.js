@@ -245,3 +245,53 @@ describe('bt.Parallel', function() {
         done();
     });
 });
+
+describe('bt.Condition', function() {
+    it('should execute the child when the condition is met and pass on the result', function(done) {
+        var root =
+            bt.Condition(function() { return true; })
+                .setChild(new MockAction());
+
+        expect(root.child.startCount).to.equal(0);
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        expect(root.child.startCount).to.equal(1);
+
+        root.child.returnStatus = bt.Status.SUCCESS;
+        expect(root.tick()).to.equal(bt.Status.SUCCESS);
+
+        done();
+    });
+
+    it('should abort the running child when the condition changes from success to failure', function(done) {
+        var condition = true;
+        var root =
+            bt.Condition(function() { return condition; })
+                .setChild(new MockAction());
+
+        expect(root.child.updateCount).to.equal(0);
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        expect(root.child.updateCount).to.equal(1);
+        expect(root.child.status).to.equal(bt.Status.RUNNING);
+
+        condition = false;
+        expect(root.child.endCount).to.equal(0);
+        expect(root.tick()).to.equal(bt.Status.FAILURE);
+        expect(root.child.updateCount).to.equal(1);
+        expect(root.child.endCount).to.equal(1);
+        expect(root.child.status).to.equal(bt.Status.ABORTED);
+
+        done();
+    });
+
+    it('should fail and not execute the child when the condition is not met', function(done) {
+        var root =
+            bt.Condition(function() { return false; })
+                .setChild(new MockAction());
+
+        expect(root.child.startCount).to.equal(0);
+        expect(root.tick()).to.equal(bt.Status.FAILURE);
+        expect(root.child.startCount).to.equal(0);
+
+        done();
+    });
+});
