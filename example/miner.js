@@ -9,8 +9,6 @@
  * 	http://www.ai-junkie.com/architecture/state_driven/tut_state2.html
  */
 
-// TODO: add money requirement for saloon!
-
 var bt = require('./../index');
 
 var Locations = {
@@ -99,6 +97,12 @@ function Miner() {
             return bt.Status.FAILURE;
         }
 
+        if (self.moneyInPockets <= 0) {
+            console.log('Uh oh... not enough money in me pockets for a drink!');
+            return bt.Status.FAILURE;
+        }
+
+        self.moneyInPockets--;
         self.thirst = 0;
 
         console.log("That's mighty fine sippin liquor.");
