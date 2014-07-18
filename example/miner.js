@@ -24,6 +24,10 @@ var Locations = {
 function Miner() {
     var self = this;
 
+    var POCKET_SIZE = 3;
+    var MINIMUM_BALANCE = 9;
+    var THIRST_THRESHOLD = 5;
+
     self.goToLocationAction = function(location) {
         // Already at the location?
         if (self.currentLocation === location) {
@@ -67,8 +71,27 @@ function Miner() {
         return bt.Status.SUCCESS;
     };
 
+    self.isEnoughMoneyInBankCondition = function() {
+        return self.moneyInBank >= MINIMUM_BALANCE;
+    };
+
+    self.sleepAction = function() {
+        if (self.currentLocation !== Locations.HOME) {
+            return bt.Status.FAILURE;
+        }
+
+        console.log("ZZZZ...");
+
+        self.moneyInBank -= 1;
+        if (self.moneyInBank <= 0) {
+            return bt.Status.SUCCESS;
+        } else {
+            return bt.Status.RUNNING;
+        }
+    };
+
     self.isThirstyCondition = function() {
-        return self.thirst >= 5;
+        return self.thirst >= THIRST_THRESHOLD;
     };
 
     self.drinkAction = function() {
@@ -83,7 +106,7 @@ function Miner() {
     };
 
     self.arePocketsFullCondition = function() {
-        return self.moneyInPockets >= 10;
+        return self.moneyInPockets >= POCKET_SIZE;
     };
 
     self.depositMoneyAction = function() {
@@ -124,17 +147,17 @@ execute(tree);
 function buildTree() {
     var miner = new Miner();
 
-    // var home =
-    //     bt.Condition(miner.isThirstyCondition)
-    //         .setChild(bt.Sequence()
-    //             .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.HOME) }))
-    //             .addChild(bt.Action({ update: miner.sleepAction })));
+    var home =
+        bt.Condition(miner.isEnoughMoneyInBankCondition)
+            .setChild(bt.Sequence()
+                .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.HOME) }))
+                .addChild(bt.Action({ update: miner.sleepAction })));
 
-    // var saloon =
-    //     bt.Condition(miner.isThirstyCondition)
-    //         .setChild(bt.Sequence()
-    //             .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.SALOON) }))
-    //             .addChild(bt.Action({ update: miner.drinkAction })));
+    var saloon =
+        bt.Condition(miner.isThirstyCondition)
+            .setChild(bt.Sequence()
+                .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.SALOON) }))
+                .addChild(bt.Action({ update: miner.drinkAction })));
 
     var bank =
         bt.Condition(miner.arePocketsFullCondition)
@@ -148,8 +171,8 @@ function buildTree() {
             .addChild(bt.Action({ update: miner.mineGoldAction }));
 
     return bt.PrioritySelector()
-        // .addChild(home)
-        // .addChild(saloon)
+        .addChild(home)
+        .addChild(saloon)
         .addChild(bank)
         .addChild(mine);
 }
