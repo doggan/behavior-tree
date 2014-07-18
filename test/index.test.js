@@ -1,5 +1,7 @@
 var expect = require('chai').expect,
     MockAction = require('./mock_objects').MockAction,
+    MockDecorator = require('./mock_objects').MockDecorator,
+    MockComposite = require('./mock_objects').MockComposite,
     bt = require('./../index');
 
 describe('bt.Action', function() {
@@ -340,51 +342,56 @@ describe('bt.Parallel', function() {
     });
 });
 
-describe('bt.Condition', function() {
-    it('should execute the child when the condition is met and pass on the result', function(done) {
-        var root =
-            bt.Condition(function() { return true; })
-                .setChild(new MockAction());
+describe('Abort', function() {
+    it('should properly abort the action and change state', function(done) {
+        var root = new MockAction();
 
-        expect(root.child.startCount).to.equal(0);
+        expect(root.endCount).to.equal(0);
         expect(root.tick()).to.equal(bt.Status.RUNNING);
-        expect(root.child.startCount).to.equal(1);
+        expect(root.endCount).to.equal(0);
 
-        root.child.returnStatus = bt.Status.SUCCESS;
-        expect(root.tick()).to.equal(bt.Status.SUCCESS);
+        root.abort();
+        expect(root.status).to.equal(bt.Status.ABORTED);
+        expect(root.endCount).to.equal(1);
 
         done();
     });
 
-    it('should abort the running child when the condition changes from success to failure', function(done) {
-        var condition = true;
+    it('should properly abort the running child node', function(done) {
         var root =
-            bt.Condition(function() { return condition; })
+            new MockDecorator()
                 .setChild(new MockAction());
 
-        expect(root.child.updateCount).to.equal(0);
         expect(root.tick()).to.equal(bt.Status.RUNNING);
-        expect(root.child.updateCount).to.equal(1);
+        expect(root.status).to.equal(bt.Status.RUNNING);
         expect(root.child.status).to.equal(bt.Status.RUNNING);
-
-        condition = false;
         expect(root.child.endCount).to.equal(0);
-        expect(root.tick()).to.equal(bt.Status.FAILURE);
-        expect(root.child.updateCount).to.equal(1);
-        expect(root.child.endCount).to.equal(1);
+
+        root.abort();
+        expect(root.status).to.equal(bt.Status.ABORTED);
         expect(root.child.status).to.equal(bt.Status.ABORTED);
+        expect(root.child.endCount).to.equal(1);
 
         done();
     });
 
-    it('should fail and not execute the child when the condition is not met', function(done) {
+    it('should properly abort all running child nodes', function(done) {
         var root =
-            bt.Condition(function() { return false; })
-                .setChild(new MockAction());
+            new MockComposite({ update: function() { return root.children[1].tick(); }})
+                .addChild(new MockAction())
+                .addChild(new MockAction());
 
-        expect(root.child.startCount).to.equal(0);
-        expect(root.tick()).to.equal(bt.Status.FAILURE);
-        expect(root.child.startCount).to.equal(0);
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+        expect(root.status).to.equal(bt.Status.RUNNING);
+        expect(root.children[0].status).to.equal(bt.Status.INVALID);
+        expect(root.children[1].status).to.equal(bt.Status.RUNNING);
+        expect(root.children[1].endCount).to.equal(0);
+
+        root.abort();
+        expect(root.status).to.equal(bt.Status.ABORTED);
+        expect(root.children[0].status).to.equal(bt.Status.INVALID);
+        expect(root.children[1].status).to.equal(bt.Status.ABORTED);
+        expect(root.children[1].endCount).to.equal(1);
 
         done();
     });
