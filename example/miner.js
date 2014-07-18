@@ -80,7 +80,7 @@ function Miner() {
             return bt.Status.FAILURE;
         }
 
-        console.log("ZZZZ...");
+        console.log("zzzzZZZZzzz...");
 
         self.moneyInBank -= 1;
         if (self.moneyInBank <= 0) {
@@ -148,22 +148,19 @@ function buildTree() {
     var miner = new Miner();
 
     var home =
-        bt.Condition(miner.isEnoughMoneyInBankCondition)
-            .setChild(bt.Sequence()
-                .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.HOME) }))
-                .addChild(bt.Action({ update: miner.sleepAction })));
+        bt.Sequence()
+            .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.HOME) }))
+            .addChild(bt.Action({ update: miner.sleepAction }));
 
     var saloon =
-        bt.Condition(miner.isThirstyCondition)
-            .setChild(bt.Sequence()
-                .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.SALOON) }))
-                .addChild(bt.Action({ update: miner.drinkAction })));
+        bt.Sequence()
+            .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.SALOON) }))
+            .addChild(bt.Action({ update: miner.drinkAction }));
 
     var bank =
-        bt.Condition(miner.arePocketsFullCondition)
-            .setChild(bt.Sequence()
-                .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.BANK) }))
-                .addChild(bt.Action({ update: miner.depositMoneyAction })));
+        bt.Sequence()
+            .addChild(bt.Action({ update: miner.goToLocationAction.bind(miner, Locations.BANK) }))
+            .addChild(bt.Action({ update: miner.depositMoneyAction }));
 
     var mine =
         bt.Sequence()
@@ -171,9 +168,9 @@ function buildTree() {
             .addChild(bt.Action({ update: miner.mineGoldAction }));
 
     return bt.PrioritySelector()
-        .addChild(home)
-        .addChild(saloon)
-        .addChild(bank)
+        .addChild(home, miner.isEnoughMoneyInBankCondition)
+        .addChild(saloon, miner.isThirstyCondition)
+        .addChild(bank, miner.arePocketsFullCondition)
         .addChild(mine);
 }
 
