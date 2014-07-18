@@ -9,6 +9,5 @@ module.exports = {
     Parallel: require('./lib/parallel').Parallel,
     ParallelPolicy: require('./lib/parallel').ParallelPolicy,
     Decorator: require('./lib/decorator'),
-    Condition: require('./lib/condition'),
     log: require('./lib/core/logger')
 };
