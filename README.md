@@ -2,7 +2,6 @@ behavior-tree
 =============
 TODO:
  * Monitor (type of Parallel)
- * Wait (leaf)
  * Success (leaf)
  * Succeeder (decorator)
  * Failure (leaf)

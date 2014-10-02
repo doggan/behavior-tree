@@ -396,3 +396,73 @@ describe('Abort', function() {
         done();
     });
 });
+
+describe('bt.Wait', function() {
+    this.timeout(0);
+
+    // Define the deltaTime callback.
+    var startTime = process.hrtime();
+    bt.Services.deltaTime = function() {
+        var elapsedTime = process.hrtime(startTime);
+        elapsedTime = elapsedTime[0] + (elapsedTime[1] / 1000000000);
+        startTime = process.hrtime();
+        return elapsedTime;
+    };
+
+    it('should properly wait for the specified # of seconds', function(done) {
+        var WAIT_TIME = 1;
+
+        var root = new bt.WaitAction(WAIT_TIME);
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+
+        function doCheck(onFinished) {
+            // Wait a little bit.
+            setTimeout(function() {
+                expect(root.tick(), 'didn\'t wait long enough').to.equal(bt.Status.RUNNING);
+            }, (WAIT_TIME * 1000) * 0.5);
+
+            // // Wait till the end.
+            setTimeout(function() {
+                expect(root.tick(), 'wait ended too soon').to.equal(bt.Status.SUCCESS);
+                onFinished();
+            }, (WAIT_TIME * 1000) * 1.1);
+        }
+
+        // Repeat the test twice to make sure the timer resets properly.
+        doCheck(function() {
+            doCheck(function() {
+                done();
+            });
+        });
+    });
+
+    it('should properly wait within the specified range of seconds', function(done) {
+        var WAIT_TIME_MIN = 1;
+        var WAIT_TIME_MAX = 2;
+
+        var root = new bt.WaitAction(WAIT_TIME_MIN, WAIT_TIME_MAX);
+
+        expect(root.tick()).to.equal(bt.Status.RUNNING);
+
+        function doCheck(onFinished) {
+            // Wait a little bit.
+            setTimeout(function() {
+                expect(root.tick(), 'didn\'t wait long enough').to.equal(bt.Status.RUNNING);
+            }, (WAIT_TIME_MIN * 1000) * 0.5);
+
+            // // Wait till the end.
+            setTimeout(function() {
+                expect(root.tick(), 'wait ended too soon').to.equal(bt.Status.SUCCESS);
+                onFinished();
+            }, (WAIT_TIME_MAX * 1000) * 1.1);
+        }
+
+        // Repeat the test twice to make sure the timer resets properly.
+        doCheck(function() {
+            doCheck(function() {
+                done();
+            });
+        });
+    });
+});
